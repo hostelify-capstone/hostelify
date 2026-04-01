@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Hostelify",
+    "slug": "hostelify",
+    "scheme": "hostelify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.hostelify.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.hostelify.app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
