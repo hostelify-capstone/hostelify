@@ -8,6 +8,10 @@ export interface AppUser {
   role: UserRole;
   roomNumber?: string;
   phone?: string;
+  enrollmentNo?: string;
+  course?: string;
+  year?: number;
+  joinDate?: string;
 }
 
 export interface Complaint {
@@ -19,6 +23,8 @@ export interface Complaint {
   priority: ComplaintPriority;
   createdAt: string;
   createdBy: string;
+  studentName?: string;
+  roomNumber?: string;
 }
 
 export interface Notice {
@@ -27,18 +33,54 @@ export interface Notice {
   content: string;
   postedAt: string;
   postedBy: string;
+  category?: string;
+  isActive?: boolean;
 }
 
 export interface RoomDetails {
+  id: string;
   roomNumber: string;
   block: string;
   floor: number;
   capacity: number;
   occupants: string[];
+  status: "available" | "occupied" | "maintenance";
+}
+
+export interface Fee {
+  id: string;
+  studentId: string;
+  studentName: string;
+  roomNumber: string;
+  amount: number;
+  dueDate: string;
+  paidDate?: string;
+  status: "paid" | "pending" | "overdue";
+  semester: string;
+}
+
+export interface MessMenu {
+  id: string;
+  day: string;
+  breakfast: string;
+  lunch: string;
+  snacks: string;
+  dinner: string;
+}
+
+export interface MessFeedback {
+  id: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  meal: "breakfast" | "lunch" | "snacks" | "dinner";
+  date: string;
 }
 
 export interface DashboardStat {
   label: string;
   value: number;
   tone?: "primary" | "secondary" | "success" | "warning" | "danger";
+  change?: number;
+  icon?: string;
 }

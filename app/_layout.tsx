@@ -14,7 +14,9 @@ export default function RootLayout() {
           headerTintColor: "#fff",
           contentStyle: { backgroundColor: Colors.background }
         }}
-      />
+      >
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
+      </Stack>
     </AuthProvider>
   );
 }
