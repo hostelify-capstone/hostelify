@@ -32,7 +32,6 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
       <Input label="Password" value={password} onChangeText={setPassword} secureTextEntry />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button title="Sign In" onPress={handleLogin} loading={loading} />
-      <Text style={styles.hint}>Demo: student@hostel.com / admin@hostel.com (any 6+ char password)</Text>
     </View>
   );
 };
@@ -44,9 +43,5 @@ const styles = StyleSheet.create({
   error: {
     color: Colors.danger,
     fontSize: 13
-  },
-  hint: {
-    color: Colors.subtext,
-    fontSize: 12
   }
-});
+});

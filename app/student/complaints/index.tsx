@@ -4,10 +4,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ComplaintList } from "@/components/lists/ComplaintList";
 import { Button } from "@/components/ui/Button";
 import { Colors } from "@/constants/colors";
+import { useAuth } from "@/hooks/useAuth";
 import { useComplaints } from "@/hooks/useComplaints";
 
 export default function ComplaintsScreen() {
-  const { complaints } = useComplaints();
+  const { user } = useAuth();
+  const { complaints } = useComplaints(user?.id);
 
   return (
     <View style={styles.container}>

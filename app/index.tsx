@@ -8,11 +8,18 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Hostelify</Text>
-      <Text style={styles.subtitle}>Smart hostel management for students and admins.</Text>
+      <Text style={styles.subtitle}>
+        Smart hostel management for students and admins.
+      </Text>
 
       <Link href="/auth/login" asChild>
         <View>
-          <Button title="Get Started" onPress={() => undefined} />
+          <Button title="Sign In" onPress={() => undefined} />
+        </View>
+      </Link>
+      <Link href="/auth/register" asChild>
+        <View>
+          <Button title="Register as Student" onPress={() => undefined} variant="secondary" />
         </View>
       </Link>
     </View>
@@ -38,4 +45,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12
   }
-});
+});

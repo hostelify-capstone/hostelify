@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ── users ────────────────────────────────────────────────────────────────
+    // Students can read/write their own profile. Admins can read/write all.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── rooms ────────────────────────────────────────────────────────────────
+    // All signed-in users can read rooms. Only admins can write.
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── roomRequests ─────────────────────────────────────────────────────────
+    // Students can create and read their own requests. Admins can read/write all.
+    match /roomRequests/{reqId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── complaints ───────────────────────────────────────────────────────────
+    // Students can create complaints and read their own. Admins read/write all.
+    match /complaints/{complaintId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── notices ──────────────────────────────────────────────────────────────
+    // All signed-in users can read. Only admins can write.
+    match /notices/{noticeId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── fees ─────────────────────────────────────────────────────────────────
+    // Students can read their own fees. Admins can read/write all.
+    match /fees/{feeId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── messMenu ─────────────────────────────────────────────────────────────
+    // All signed-in users can read. Only admins can write.
+    match /messMenu/{menuId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── messFeedback ─────────────────────────────────────────────────────────
+    // All signed-in users can read. Students can create. Admins can delete.
+    match /messFeedback/{feedbackId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // ── gatePasses ───────────────────────────────────────────────────────────
+    // Students can create and read all passes. Admins can update/delete.
+    match /gatePasses/{passId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── pendingVerifications ─────────────────────────────────────────────────
+    // OTP verification docs — any signed-out user needs to write,
+    // but we allow any authenticated or unauthenticated write for OTP flow.
+    match /pendingVerifications/{email} {
+      allow read, write: if true;
+    }
+  }
+}

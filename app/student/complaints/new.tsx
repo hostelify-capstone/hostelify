@@ -1,26 +1,43 @@
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { ComplaintForm } from "@/components/forms/ComplaintForm";
 import { Colors } from "@/constants/colors";
+import { useAuth } from "@/hooks/useAuth";
 import { useComplaints } from "@/hooks/useComplaints";
 
 export default function NewComplaintScreen() {
-  const { addComplaint } = useComplaints();
+  const { user } = useAuth();
+  const { addComplaint } = useComplaints(user?.id);
+  const [loading, setLoading] = useState(false);
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Raise a Complaint</Text>
       <ComplaintForm
-        onSubmit={(title, description, category) => {
+        onSubmit={async (title, description, category) => {
           if (!title || !description) {
             Alert.alert("Missing Fields", "Please enter title and description.");
             return;
           }
-          addComplaint({ title, description, category, createdBy: "student-1" });
-          Alert.alert("Submitted", "Complaint submitted with AI-priority classification.", [
-            { text: "OK", onPress: () => router.back() }
-          ]);
+          try {
+            setLoading(true);
+            await addComplaint({
+              title,
+              description,
+              category,
+              createdBy: user?.id ?? "unknown",
+              studentName: user?.name,
+              roomNumber: user?.roomNumber,
+            });
+            Alert.alert("Submitted", "Your complaint has been submitted.", [
+              { text: "OK", onPress: () => router.back() }
+            ]);
+          } catch (e) {
+            Alert.alert("Error", "Failed to submit. Please try again.");
+          } finally {
+            setLoading(false);
+          }
         }}
       />
     </View>
@@ -28,15 +45,6 @@ export default function NewComplaintScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    padding: 16,
-    gap: 12
-  },
-  heading: {
-    color: Colors.text,
-    fontSize: 22,
-    fontWeight: "700"
-  }
-});
+  container: { flex: 1, backgroundColor: Colors.background, padding: 16, gap: 12 },
+  heading:   { color: Colors.text, fontSize: 22, fontWeight: "700" }
+});

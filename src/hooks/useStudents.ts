@@ -1,26 +1,44 @@
-import { useCallback, useMemo, useState } from "react";
-import { seedStudents } from "@/data/adminSeedData";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { collections } from "@/services/firebase/firestore";
 import type { AppUser } from "@/types";
+import { onSnapshot, query, where, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { Roles } from "@/constants/roles";
 
 export const useStudents = () => {
-  const [students, setStudents] = useState<AppUser[]>(seedStudents);
+  const [students, setStudents] = useState<AppUser[]>([]);
+
+  useEffect(() => {
+    const q = query(
+      collections.users,
+      where("role", "==", Roles.STUDENT)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: AppUser[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as AppUser);
+      });
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      setStudents(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const addStudent = useCallback((student: Omit<AppUser, "id">) => {
-    const newStudent: AppUser = {
-      ...student,
-      id: `stu-${Date.now()}`,
-    };
-    setStudents((prev) => [newStudent, ...prev]);
+    // Note: Creating a student directly from admin dashboard is not supported in simple Firebase Auth via client.
+    // They must be registered via Firebase Auth first. We'll skip implementation here, but a Cloud Function is ideal.
+    console.warn("Adding a student directly requires Firebase Admin SDK or a Cloud Function to create the Auth user.");
   }, []);
 
-  const updateStudent = useCallback((id: string, data: Partial<AppUser>) => {
-    setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...data } : s))
-    );
+  const updateStudent = useCallback(async (id: string, data: Partial<AppUser>) => {
+    const docRef = doc(collections.users, id);
+    await updateDoc(docRef, data);
   }, []);
 
-  const deleteStudent = useCallback((id: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
+  const deleteStudent = useCallback(async (id: string) => {
+    // Only deletes profile, not the Auth user.
+    const docRef = doc(collections.users, id);
+    await deleteDoc(docRef);
   }, []);
 
   const stats = useMemo(

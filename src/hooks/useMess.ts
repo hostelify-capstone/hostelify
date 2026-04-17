@@ -1,14 +1,42 @@
-import { useCallback, useMemo, useState } from "react";
-import { seedMessMenu, seedMessFeedback } from "@/data/adminSeedData";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { collections } from "@/services/firebase/firestore";
 import type { MessMenu, MessFeedback } from "@/types";
+import { onSnapshot, query, updateDoc, doc } from "firebase/firestore";
 
 export const useMess = () => {
-  const [menu, setMenu] = useState<MessMenu[]>(seedMessMenu);
-  const [feedback] = useState<MessFeedback[]>(seedMessFeedback);
+  const [menu, setMenu] = useState<MessMenu[]>([]);
+  const [feedback, setFeedback] = useState<MessFeedback[]>([]);
+
+  useEffect(() => {
+    const qMenu = query(collections.messMenu);
+    const unsubMenu = onSnapshot(qMenu, (snapshot) => {
+      const data: MessMenu[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as MessMenu);
+      });
+      setMenu(data);
+    });
+
+    const qFeedback = query(collections.messFeedback);
+    const unsubFeedback = onSnapshot(qFeedback, (snapshot) => {
+      const data: MessFeedback[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as MessFeedback);
+      });
+      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setFeedback(data);
+    });
+
+    return () => {
+      unsubMenu();
+      unsubFeedback();
+    };
+  }, []);
 
   const updateMenuItem = useCallback(
-    (id: string, data: Partial<MessMenu>) => {
-      setMenu((prev) => prev.map((m) => (m.id === id ? { ...m, ...data } : m)));
+    async (id: string, data: Partial<MessMenu>) => {
+      const docRef = doc(collections.messMenu, id);
+      await updateDoc(docRef, data);
     },
     []
   );

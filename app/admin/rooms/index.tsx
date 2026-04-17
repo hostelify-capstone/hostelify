@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -19,7 +20,9 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Colors } from "@/constants/colors";
 import { useRooms } from "@/hooks/useRooms";
 import { useStudents } from "@/hooks/useStudents";
+import { db } from "@/services/firebase/config";
 import type { RoomDetails } from "@/types";
+import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 
 const STATUS_FILTERS = [
   { label: "All", value: "all" },
@@ -38,13 +41,50 @@ const BLOCK_FILTERS = [
 
 export default function AdminRoomsScreen() {
   const { rooms, addRoom, updateRoom, deleteRoom, removeStudent, stats } = useRooms();
-  const { students } = useStudents();
+  const { students, updateStudent } = useStudents();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [blockFilter, setBlockFilter] = useState("all");
   const [modalVisible, setModalVisible] = useState(false);
   const [editRoom, setEditRoom] = useState<RoomDetails | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [roomRequests, setRoomRequests] = useState<any[]>([]);
+
+  // Real-time room requests
+  useEffect(() => {
+    const q = query(collection(db, "roomRequests"), where("status", "==", "pending"));
+    return onSnapshot(q, snap => {
+      setRoomRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }, []);
+
+  const approveRequest = async (req: any) => {
+    try {
+      // Mark request as approved
+      await updateDoc(doc(db, "roomRequests", req.id), { status: "approved" });
+      // Add student to room occupants
+      const room = rooms.find(r => r.id === req.roomId);
+      if (room) {
+        const newOccupants = [...room.occupants, req.studentId];
+        const newStatus = newOccupants.length >= room.capacity ? "occupied" : "available";
+        await updateDoc(doc(db, "rooms", req.roomId), { occupants: newOccupants, status: newStatus });
+      }
+      // Update student's roomNumber in Firestore
+      await updateDoc(doc(db, "users", req.studentId), { roomNumber: req.roomNumber });
+      Alert.alert("Approved!", `${req.studentName} has been assigned to room ${req.roomNumber}.`);
+    } catch (e) {
+      Alert.alert("Error", "Failed to approve request.");
+    }
+  };
+
+  const rejectRequest = async (req: any) => {
+    try {
+      await updateDoc(doc(db, "roomRequests", req.id), { status: "rejected" });
+      Alert.alert("Rejected", `Room request from ${req.studentName} has been rejected.`);
+    } catch (e) {
+      Alert.alert("Error", "Failed to reject request.");
+    }
+  };
 
   // Form
   const [formRoomNumber, setFormRoomNumber] = useState("");
@@ -165,6 +205,40 @@ export default function AdminRoomsScreen() {
         <FilterChips options={STATUS_FILTERS} selected={statusFilter} onSelect={setStatusFilter} />
         <FilterChips options={BLOCK_FILTERS} selected={blockFilter} onSelect={setBlockFilter} />
 
+        {/* Room Booking Requests */}
+        {roomRequests.length > 0 && (
+          <>
+            <SectionHeader
+              title={`🔔 Room Requests (${roomRequests.length})`}
+              subtitle="Students waiting for room assignment"
+            />
+            <View style={styles.requestList}>
+              {roomRequests.map(req => (
+                <Card key={req.id} style={styles.requestCard}>
+                  <View style={styles.requestHeader}>
+                    <View>
+                      <Text style={styles.requestName}>{req.studentName}</Text>
+                      <Text style={styles.requestMeta}>{req.email}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: Colors.warningLight }]}>
+                      <Text style={[styles.statusText, { color: Colors.warning }]}>Pending</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.requestRoom}>Requested: Room {req.roomNumber} (Block {req.block})</Text>
+                  <View style={styles.requestActions}>
+                    <Pressable style={styles.approveBtn} onPress={() => approveRequest(req)}>
+                      <Text style={styles.approveBtnText}>✓ Approve</Text>
+                    </Pressable>
+                    <Pressable style={styles.rejectBtn} onPress={() => rejectRequest(req)}>
+                      <Text style={styles.rejectBtnText}>✕ Reject</Text>
+                    </Pressable>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          </>
+        )}
+
         {/* Room Grid */}
         <View style={styles.roomGrid}>
           {filtered.map((room) => (
@@ -284,6 +358,17 @@ const styles = StyleSheet.create({
   occupancyTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
   filtersRow: { flexDirection: "row", gap: 12 },
   searchWrap: { flex: 1, maxWidth: 400 },
+  requestList: { gap: 12 },
+  requestCard: { gap: 10 },
+  requestHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  requestName: { color: Colors.text, fontWeight: "700", fontSize: 15 },
+  requestMeta: { color: Colors.subtext, fontSize: 12 },
+  requestRoom: { color: Colors.primary, fontSize: 14, fontWeight: "600" },
+  requestActions: { flexDirection: "row", gap: 10 },
+  approveBtn: { flex: 1, backgroundColor: Colors.success, padding: 10, borderRadius: 8, alignItems: "center" },
+  approveBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  rejectBtn: { flex: 1, backgroundColor: Colors.dangerLight, padding: 10, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: Colors.danger },
+  rejectBtnText: { color: Colors.danger, fontWeight: "700", fontSize: 13 },
 
   // Room Grid
   roomGrid: {

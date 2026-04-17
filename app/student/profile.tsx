@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Colors } from "@/constants/colors";
@@ -9,24 +9,35 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Profile</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>My Profile</Text>
       <Card style={styles.card}>
-        <Text style={styles.text}>Name: {user?.name ?? "Demo Student"}</Text>
-        <Text style={styles.text}>Email: {user?.email ?? "student@hostel.com"}</Text>
-        <Text style={styles.text}>Room: {user?.roomNumber ?? "A-204"}</Text>
+        <ProfileRow label="Name" value={user?.name} />
+        <ProfileRow label="Email" value={user?.email} />
+        <ProfileRow label="Role" value={user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : undefined} />
+        {user?.roomNumber ? <ProfileRow label="Room" value={user.roomNumber} /> : null}
+        {user?.phone ? <ProfileRow label="Phone" value={user.phone} /> : null}
+        {user?.enrollmentNo ? <ProfileRow label="Enrollment No." value={user.enrollmentNo} /> : null}
+        {user?.course ? <ProfileRow label="Course" value={user.course} /> : null}
+        {user?.year ? <ProfileRow label="Year" value={String(user.year)} /> : null}
       </Card>
       <Button title="Sign Out" onPress={signOut} variant="danger" />
-    </View>
+    </ScrollView>
   );
 }
 
+const ProfileRow = ({ label, value }: { label: string; value?: string }) => (
+  <View style={styles.row}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={styles.value}>{value ?? "—"}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.background,
     padding: 16,
-    gap: 12
+    gap: 12,
+    backgroundColor: Colors.background
   },
   heading: {
     color: Colors.text,
@@ -34,10 +45,23 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   card: {
-    gap: 8
+    gap: 12
   },
-  text: {
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border
+  },
+  label: {
+    color: Colors.subtext,
+    fontSize: 14,
+    fontWeight: "500"
+  },
+  value: {
     color: Colors.text,
-    fontSize: 14
+    fontSize: 14,
+    fontWeight: "600"
   }
-});
+});

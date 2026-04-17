@@ -17,10 +17,12 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Colors } from "@/constants/colors";
 import { useStudents } from "@/hooks/useStudents";
+import { useRooms } from "@/hooks/useRooms";
 import type { AppUser } from "@/types";
 
 export default function AdminStudentsScreen() {
   const { students, addStudent, updateStudent, deleteStudent } = useStudents();
+  const { rooms } = useRooms();
   const [search, setSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("all");
   const [modalVisible, setModalVisible] = useState(false);
@@ -85,11 +87,47 @@ export default function AdminStudentsScreen() {
     setFormRoom("");
   };
 
-  const handleSubmit = () => {
+  const syncRoomAssignment = async (
+    studentId: string,
+    oldRoomNumber: string | undefined,
+    newRoomNumber: string | undefined,
+    allRooms: import("@/types").RoomDetails[]
+  ) => {
+    const { doc, updateDoc, arrayUnion, arrayRemove } = await import("firebase/firestore");
+    const { db } = await import("@/services/firebase/config");
+
+    // Remove from old room
+    if (oldRoomNumber && oldRoomNumber !== newRoomNumber) {
+      const oldRoom = allRooms.find(r => r.roomNumber === oldRoomNumber);
+      if (oldRoom) {
+        const newOccupants = oldRoom.occupants.filter(o => o !== studentId);
+        // Occupied only when ALL beds taken; available if any bed is free
+        const newStatus = newOccupants.length >= oldRoom.capacity ? "occupied" : "available";
+        await updateDoc(doc(db, "rooms", oldRoom.id), {
+          occupants: arrayRemove(studentId),
+          status: newStatus,
+        });
+      }
+    }
+
+    // Add to new room
+    if (newRoomNumber) {
+      const newRoom = allRooms.find(r => r.roomNumber === newRoomNumber);
+      if (newRoom && !newRoom.occupants.includes(studentId)) {
+        const updatedOccupants = [...newRoom.occupants, studentId];
+        await updateDoc(doc(db, "rooms", newRoom.id), {
+          occupants: arrayUnion(studentId),
+          status: updatedOccupants.length >= newRoom.capacity ? "occupied" : "available",
+        });
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!formName.trim() || !formEmail.trim()) return;
 
     if (editStudent) {
-      updateStudent(editStudent.id, {
+      const updates = {
         name: formName.trim(),
         email: formEmail.trim(),
         phone: formPhone.trim() || undefined,
@@ -97,7 +135,18 @@ export default function AdminStudentsScreen() {
         course: formCourse.trim() || undefined,
         year: formYear ? parseInt(formYear, 10) : undefined,
         roomNumber: formRoom.trim() || undefined,
-      });
+      };
+      await updateStudent(editStudent.id, updates);
+
+      // Sync rooms collection if room changed
+      if (formRoom.trim() !== (editStudent.roomNumber ?? "")) {
+        await syncRoomAssignment(
+          editStudent.id,
+          editStudent.roomNumber,
+          formRoom.trim() || undefined,
+          rooms
+        );
+      }
     } else {
       addStudent({
         name: formName.trim(),
@@ -116,6 +165,11 @@ export default function AdminStudentsScreen() {
   };
 
   const handleDelete = (id: string) => {
+    const student = students.find(s => s.id === id);
+    if (student?.roomNumber) {
+      // Remove from room too
+      syncRoomAssignment(id, student.roomNumber, undefined, rooms);
+    }
     deleteStudent(id);
     setDeleteConfirm(null);
   };

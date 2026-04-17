@@ -1,35 +1,50 @@
-import { useCallback, useState } from "react";
-import { seedNotices } from "@/data/adminSeedData";
+import { useCallback, useState, useEffect } from "react";
+import { collections } from "@/services/firebase/firestore";
+import { auth } from "@/services/firebase/config";
 import type { Notice } from "@/types";
+import { onSnapshot, query, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 
 export const useAdminNotices = () => {
-  const [notices, setNotices] = useState<Notice[]>(seedNotices);
+  const [notices, setNotices] = useState<Notice[]>([]);
+
+  useEffect(() => {
+    const q = query(collections.notices);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: Notice[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as Notice);
+      });
+      data.sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+      setNotices(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const addNotice = useCallback(
-    (notice: Omit<Notice, "id" | "postedAt" | "postedBy">) => {
-      const newNotice: Notice = {
+    async (notice: Omit<Notice, "id" | "postedAt" | "postedBy">) => {
+      const newNotice = {
         ...notice,
-        id: `notice-${Date.now()}`,
         postedAt: new Date().toISOString(),
-        postedBy: "admin-1",
+        postedBy: auth.currentUser?.uid ?? "admin",
         isActive: true,
       };
-      setNotices((prev) => [newNotice, ...prev]);
+      await addDoc(collections.notices, newNotice);
     },
     []
   );
 
   const updateNotice = useCallback(
-    (id: string, data: Partial<Notice>) => {
-      setNotices((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, ...data } : n))
-      );
+    async (id: string, data: Partial<Notice>) => {
+      const docRef = doc(collections.notices, id);
+      await updateDoc(docRef, data);
     },
     []
   );
 
-  const deleteNotice = useCallback((id: string) => {
-    setNotices((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotice = useCallback(async (id: string) => {
+    const docRef = doc(collections.notices, id);
+    await deleteDoc(docRef);
   }, []);
 
   return { notices, addNotice, updateNotice, deleteNotice };
