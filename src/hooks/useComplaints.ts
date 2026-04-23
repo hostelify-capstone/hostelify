@@ -35,7 +35,7 @@ export const useComplaints = () => {
     return {
       total: complaints.length,
       open: complaints.filter((c) => c.status === "open").length,
-      highPriority: complaints.filter((c) => [ComplaintPriorities.HIGH, ComplaintPriorities.CRITICAL].includes(c.priority)).length
+      highPriority: complaints.filter((c) => c.priority === ComplaintPriorities.HIGH || c.priority === ComplaintPriorities.CRITICAL).length
     };
   }, [complaints]);
 

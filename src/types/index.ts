@@ -1,6 +1,8 @@
 import type { ComplaintPriority } from "@/constants/complaintPriorities";
 import type { UserRole } from "@/constants/roles";
 
+export type { ComplaintPriority };
+
 export interface AppUser {
   id: string;
   name: string;
