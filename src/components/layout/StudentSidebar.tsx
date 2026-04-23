@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StudentNavItem {
   label: string;
@@ -24,6 +25,7 @@ const NAV_ITEMS: StudentNavItem[] = [
 export const StudentSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useAuth();
 
   return (
     <View style={styles.sidebar}>
@@ -62,7 +64,10 @@ export const StudentSidebar = () => {
       </ScrollView>
 
       <View style={styles.divider} />
-      <Pressable style={styles.logoutBtn} onPress={() => router.replace("/auth/login")}> 
+      <Pressable style={styles.logoutBtn} onPress={async () => {
+        await signOut();
+        router.replace("/auth/login");
+      }}> 
         <View style={styles.navIconWrap}>
           <Ionicons name="log-out-outline" size={20} color={Colors.sidebarText} />
         </View>
