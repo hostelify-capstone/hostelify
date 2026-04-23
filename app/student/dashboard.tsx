@@ -1,105 +1,272 @@
-import { Link, router } from "expo-router";
-import React from "react";
+import { Link } from "expo-router";
+import React, { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StudentShell } from "@/components/layout/StudentShell";
 import { Card } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { StatCard } from "@/components/ui/StatCard";
 import { Colors } from "@/constants/colors";
+import { useComplaints } from "@/hooks/useComplaints";
+import { useFees } from "@/hooks/useFees";
+import { useMess } from "@/hooks/useMess";
+import { useNotices } from "@/hooks/useNotices";
+import { useRooms } from "@/hooks/useRooms";
+import { useStudents } from "@/hooks/useStudents";
 import { useAuth } from "@/hooks/useAuth";
 
-const actions = [
-  { title: "🏠 Room Booking",  href: "/student/room-booking" as const },
-  { title: "💳 Fee Payment",   href: "/student/fees" as const },
-  { title: "📋 Complaints",    href: "/student/complaints" as const },
-  { title: "📢 Notices",       href: "/student/notices" as const },
-  { title: "🚪 Gate Pass",     href: "/student/gate-pass" as const },
-  { title: "🍽️ Mess Feedback", href: "/student/mess-feedback" as const },
-  { title: "🛏️ Room Details",  href: "/student/room" as const },
-  { title: "👤 Profile",       href: "/student/profile" as const },
+const quickActions = [
+  { title: "Raise Complaint", href: "/student/complaints/new" as const },
+  { title: "Pay Fees", href: "/student/fees" as const },
+  { title: "View Notices", href: "/student/notices" as const },
 ];
 
 export default function StudentDashboardScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { students } = useStudents();
+  const { rooms } = useRooms();
+  const { fees } = useFees();
+  const { complaints } = useComplaints(user?.id);
+  const { notices } = useNotices();
+  const { menu } = useMess();
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace("/auth/login");
-  };
+  const student = user;
+
+  const room = useMemo(
+    () => rooms.find((item) => item.roomNumber === student?.roomNumber),
+    [rooms, student?.roomNumber]
+  );
+
+  const studentFees = fees.filter((item) => item.studentId === user?.id);
+  const paidFees = studentFees.filter((item) => item.status === "paid").length;
+  const studentComplaints = complaints;
+  const activeComplaints = studentComplaints.filter((item) => item.status !== "resolved").length;
+  const latestNotices = [...notices].sort((a, b) => (a.postedAt > b.postedAt ? -1 : 1)).slice(0, 3);
+  const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const todayMenu = menu.find((item) => item.day === todayName) ?? menu[0];
+  const feeCompletion = studentFees.length > 0 ? Math.round((paidFees / studentFees.length) * 100) : 0;
+  const pendingFees = studentFees.filter((item) => item.status !== "paid").length;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.heading}>Welcome, {user?.name?.split(" ")[0] ?? "Student"} 👋</Text>
-          <Text style={styles.sub}>What would you like to do today?</Text>
+    <StudentShell title="Dashboard">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={styles.headerBlock}>
+          <Text style={styles.welcome}>Welcome back, {student?.name ?? "Student"}</Text>
+          <Text style={styles.subtitle}>Your hostel overview for today</Text>
         </View>
-        <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </Pressable>
-      </View>
 
-      <View style={styles.grid}>
-        {actions.map((item) => (
-          <Link href={item.href} asChild key={item.title}>
-            <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-              <Card style={styles.card}>
-                <Text style={styles.cardText}>{item.title}</Text>
-              </Card>
-            </Pressable>
-          </Link>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.statsRow}>
+          <StatCard
+            label="Room Details"
+            value={room?.roomNumber ?? "N/A"}
+            icon={<Ionicons name="home" size={22} color={Colors.info} />}
+            iconBg={Colors.infoLight}
+          />
+          <StatCard
+            label="Fee Status"
+            value={`${feeCompletion}%`}
+            icon={<Ionicons name="wallet" size={22} color={Colors.success} />}
+            iconBg={Colors.successLight}
+          />
+          <StatCard
+            label="Active Complaints"
+            value={activeComplaints}
+            icon={<Ionicons name="clipboard" size={22} color={Colors.warning} />}
+            iconBg={Colors.warningLight}
+          />
+          <StatCard
+            label="Latest Notices"
+            value={latestNotices.length}
+            icon={<Ionicons name="megaphone" size={22} color={Colors.primary} />}
+            iconBg={Colors.primaryLight}
+          />
+          <StatCard
+            label="Today's Mess Menu"
+            value={todayMenu?.day ?? "Today"}
+            icon={<Ionicons name="restaurant" size={22} color={Colors.secondary} />}
+            iconBg={Colors.secondaryLight}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <Card style={styles.largeCard}>
+            <Text style={styles.sectionTitle}>Room & Fee Summary</Text>
+            <Text style={styles.sectionSub}>Current room and semester dues</Text>
+
+            <View style={styles.infoRows}>
+              <InfoRow label="Room" value={`${room?.roomNumber ?? "-"} (Block ${room?.block ?? "-"})`} />
+              <InfoRow label="Occupancy" value={`${room?.occupants.length ?? 0}/${room?.capacity ?? 0}`} />
+              <InfoRow label="Paid Installments" value={`${paidFees}/${studentFees.length || 0}`} />
+              <InfoRow label="Pending Installments" value={`${pendingFees}`} />
+            </View>
+
+            <ProgressBar
+              value={paidFees}
+              maxValue={studentFees.length || 1}
+              color={Colors.success}
+              label="Fee Completion"
+            />
+          </Card>
+
+          <Card style={styles.largeCard}>
+            <Text style={styles.sectionTitle}>Latest Notices</Text>
+            <Text style={styles.sectionSub}>Important updates from hostel administration</Text>
+            <View style={styles.noticeList}>
+              {latestNotices.map((notice) => (
+                <View key={notice.id} style={styles.noticeItem}>
+                  <Text style={styles.noticeTitle}>{notice.title}</Text>
+                  <Text style={styles.noticeMeta}>{notice.category ?? "General"}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.row}>
+          <Card style={styles.largeCard}>
+            <Text style={styles.sectionTitle}>Today's Mess Menu</Text>
+            <Text style={styles.sectionSub}>{todayMenu?.day ?? "Today"}</Text>
+            <View style={styles.menuRows}>
+              <InfoRow label="Breakfast" value={todayMenu?.breakfast ?? "-"} />
+              <InfoRow label="Lunch" value={todayMenu?.lunch ?? "-"} />
+              <InfoRow label="Snacks" value={todayMenu?.snacks ?? "-"} />
+              <InfoRow label="Dinner" value={todayMenu?.dinner ?? "-"} />
+            </View>
+          </Card>
+
+          <Card style={styles.largeCard}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionSub}>Frequently used student tasks</Text>
+            <View style={styles.quickActions}>
+              {quickActions.map((action) => (
+                <Link href={action.href as any} asChild key={action.title}>
+                  <Pressable style={styles.quickBtn}>
+                    <Text style={styles.quickBtnText}>{action.title}</Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </View>
+          </Card>
+        </View>
+      </ScrollView>
+    </StudentShell>
   );
 }
 
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+  <View style={styles.infoRow}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <Text style={styles.infoValue}>{value}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 14,
-    backgroundColor: Colors.background
+  scroll: {
+    gap: 16,
+    paddingBottom: 24,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  headerBlock: {
+    gap: 2,
   },
-  heading: {
-    color: Colors.text,
+  welcome: {
     fontSize: 24,
-    fontWeight: "700"
+    fontWeight: "800",
+    color: Colors.text,
   },
-  sub: {
-    color: Colors.subtext,
+  subtitle: {
     fontSize: 14,
-    marginTop: 2,
+    color: Colors.subtext,
   },
-  signOutBtn: {
-    backgroundColor: Colors.dangerLight,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.danger,
-  },
-  signOutText: {
-    color: Colors.danger,
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  grid: {
+  statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12
+    gap: 16,
   },
-  card: {
-    width: 160,
-    minHeight: 90,
-    alignItems: "center",
-    justifyContent: "center"
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
   },
-  cardText: {
-    fontSize: 15,
+  largeCard: {
+    flex: 1,
+    minWidth: 360,
+    padding: 20,
+    gap: 10,
+  },
+  sectionTitle: {
     color: Colors.text,
-    fontWeight: "600"
-  }
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  sectionSub: {
+    fontSize: 13,
+    color: Colors.subtext,
+  },
+  infoRows: {
+    gap: 8,
+    marginVertical: 4,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  infoLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: Colors.subtext,
+    width: 130,
+  },
+  infoValue: {
+    flex: 1,
+    textAlign: "right",
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  noticeList: {
+    gap: 8,
+    marginTop: 4,
+  },
+  noticeItem: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: Colors.surface,
+  },
+  noticeTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  noticeMeta: {
+    marginTop: 2,
+    color: Colors.subtext,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  menuRows: {
+    gap: 8,
+    marginTop: 4,
+  },
+  quickActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 4,
+  },
+  quickBtn: {
+    minWidth: 160,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+  },
+  quickBtnText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

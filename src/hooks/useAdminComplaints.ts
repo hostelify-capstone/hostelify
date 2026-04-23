@@ -43,7 +43,7 @@ export const useAdminComplaints = () => {
     const inProgress = complaints.filter((c) => c.status === "in-progress").length;
     const resolved = complaints.filter((c) => c.status === "resolved").length;
     const highPriority = complaints.filter((c) =>
-      [ComplaintPriorities.HIGH, ComplaintPriorities.CRITICAL].includes(c.priority)
+      c.priority === ComplaintPriorities.HIGH || c.priority === ComplaintPriorities.CRITICAL
     ).length;
     const byCategory = complaints.reduce((acc, c) => {
       acc[c.category] = (acc[c.category] ?? 0) + 1;

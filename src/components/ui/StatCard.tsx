@@ -5,7 +5,7 @@ import { Colors } from "@/constants/colors";
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: string;
+  icon: React.ReactNode;
   iconBg: string;
   change?: number;
 }
@@ -27,7 +27,7 @@ export const StatCard = ({ label, value, icon, iconBg, change }: StatCardProps) 
           )}
         </View>
         <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-          <Text style={styles.icon}>{icon}</Text>
+          {typeof icon === "string" ? <Text style={styles.icon}>{icon}</Text> : icon}
         </View>
       </View>
     </View>
