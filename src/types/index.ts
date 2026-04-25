@@ -86,3 +86,32 @@ export interface DashboardStat {
   change?: number;
   icon?: string;
 }
+
+export type LeaveType = "day" | "night" | "vacation";
+export type LeaveStatus = "pending" | "approved" | "rejected";
+export type VisitPlace =
+  | "Home"
+  | "Local Guardian"
+  | "Personal Grooming"
+  | "Medical Checkup"
+  | "Academic Purposes"
+  | "Local Visit"
+  | "Out Station Visit"
+  | "Coaching"
+  | "Placement"
+  | "Other";
+
+export interface HostelLeave {
+  id: string;
+  studentId: string;
+  studentName: string;
+  roomNumber: string;
+  leaveType: LeaveType;
+  visitPlace: VisitPlace;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  appliedAt: string;
+  status: LeaveStatus;
+  mobileNo: string;
+}

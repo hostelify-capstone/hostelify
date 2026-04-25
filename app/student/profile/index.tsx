@@ -36,12 +36,6 @@ const INTERESTS = [
   { label: "Science", value: 50, color: "#2EAA7D" },
 ];
 
-const CONTACTS = [
-  { id: 1, name: "Sade W.", avatar: "https://i.pravatar.cc/100?img=1" },
-  { id: 2, name: "Ayaan F.", avatar: "https://i.pravatar.cc/100?img=2" },
-  { id: 3, name: "Alex T.", avatar: "https://i.pravatar.cc/100?img=3" },
-];
-
 const RadarChart = () => {
   const size = 160;
   const center = size / 2;
@@ -164,78 +158,6 @@ export default function StudentProfileScreen() {
             </View>
           </Card>
         </View>
-
-        <View style={styles.gridRow}>
-          {/* SOCIAL CONTACTS */}
-          <Card style={[styles.gridItem, { flex: 0.8 }]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Social contacts</Text>
-              <Text style={styles.linkText}>See all</Text>
-            </View>
-            <View style={styles.contactsRow}>
-              {CONTACTS.map(contact => (
-                <View key={contact.id} style={styles.contactItem}>
-                  <Image source={{ uri: contact.avatar }} style={styles.contactAvatar} />
-                  <Text style={styles.contactName}>{contact.name}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.friendsCount}>Number of Facebook friends <Text style={{fontWeight: 'bold'}}>78</Text></Text>
-          </Card>
-
-          {/* ACADEMIC PERFORMANCE */}
-          <Card style={[styles.gridItem, { flex: 1.2 }]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Academic performance</Text>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#B0B0B0" />
-            </View>
-            <View style={styles.chartWrapper}>
-              <LineChart
-                data={{
-                  labels: ["03/20", "06/20", "09/20", "12/20"],
-                  datasets: [{ data: [40, 55, 30, 70] }]
-                }}
-                width={screenWidth > 500 ? screenWidth * 0.4 : screenWidth - 80}
-                height={160}
-                withDots={true}
-                withInnerLines={true}
-                withOuterLines={false}
-                chartConfig={{
-                  backgroundColor: "#ffffff",
-                  backgroundGradientFrom: "#ffffff",
-                  backgroundGradientTo: "#ffffff",
-                  color: (opacity = 1) => `rgba(46, 170, 125, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(150, 150, 150, ${opacity})`,
-                  strokeWidth: 3,
-                  propsForDots: { r: "4", strokeWidth: "2", stroke: "#F05656" }
-                }}
-                bezier
-                style={{ marginLeft: -20 }}
-              />
-            </View>
-          </Card>
-        </View>
-
-        {/* PERSONAL RECOMMENDATIONS */}
-        <Text style={styles.mainHeading}>Personal recommendations</Text>
-        <Card style={styles.recommendationCard}>
-          <View style={[styles.iconCircle, { backgroundColor: '#FDECEC' }]}>
-            <Ionicons name="flash" size={24} color="#F05656" />
-          </View>
-          <View style={styles.recTextContainer}>
-            <Text style={styles.recTitle}>High stress level</Text>
-            <Text style={styles.recDesc}>Personal psychological consultation recommended</Text>
-          </View>
-        </Card>
-        <Card style={styles.recommendationCard}>
-          <View style={[styles.iconCircle, { backgroundColor: '#EAF8F3' }]}>
-            <Ionicons name="color-palette" size={24} color="#2EAA7D" />
-          </View>
-          <View style={styles.recTextContainer}>
-            <Text style={styles.recTitle}>Afterschool programs</Text>
-            <Text style={styles.recDesc}>A penchant for art. Drawing classes recommended</Text>
-          </View>
-        </Card>
 
         {/* MEDICAL HISTORY */}
         <Text style={styles.mainHeading}>Medical history</Text>
@@ -452,55 +374,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  contactsRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginVertical: 16,
-  },
-  contactItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  contactAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-  },
-  contactName: {
-    fontSize: 12,
-    color: '#555',
-  },
-  friendsCount: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 8,
-  },
-  chartWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    marginLeft: -10,
-  },
   mainHeading: {
     fontSize: 20,
     fontWeight: '800',
     color: '#333',
     marginTop: 16,
     marginBottom: 8,
-  },
-  recommendationCard: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-    gap: 16,
-    backgroundColor: '#FAFAFA',
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   recTextContainer: {
     flex: 1,

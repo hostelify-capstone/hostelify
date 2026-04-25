@@ -17,6 +17,7 @@ const NAV_ITEMS: StudentNavItem[] = [
   { label: "Complaints", icon: "clipboard-outline", route: "/student/complaints" },
   { label: "Notices", icon: "megaphone-outline", route: "/student/notices" },
   { label: "Mess", icon: "restaurant-outline", route: "/student/mess" },
+  { label: "Hostel Leave", icon: "exit-outline", route: "/student/hostel-leave" },
   { label: "Profile", icon: "person-outline", route: "/student/profile" },
   { label: "AI Chat", icon: "chatbubble-ellipses-outline", route: "/student/chatbot" },
 ];

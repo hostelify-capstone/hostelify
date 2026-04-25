@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Fees", icon: "💰", route: "/admin/fees" },
   { label: "Notices", icon: "📢", route: "/admin/notices" },
   { label: "Mess", icon: "🍽️", route: "/admin/mess" },
+  { label: "Hostel Leave", icon: "🚪", route: "/admin/hostel-leave" },
 ];
 
 export const AdminSidebar = () => {
