@@ -35,6 +35,8 @@ Thumbs.db
 # Firebase
 firebase-debug.log
 .firebase/
+serviceAccountKey.json
+*.serviceAccount.json
 
 # Package lock
 package-lock.json

@@ -5,23 +5,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { StudentShell } from "@/components/layout/StudentShell";
 import { Card } from "@/components/ui/Card";
 import { Colors } from "@/constants/colors";
+import { useAuth } from "@/hooks/useAuth";
 import { useComplaints } from "@/hooks/useComplaints";
 
-const CURRENT_STUDENT_ID = "stu-1";
+
 
 export default function ComplaintsScreen() {
-  const { complaints } = useComplaints();
+  const { user } = useAuth();
+  const { complaints } = useComplaints(user?.id);
   const [filter, setFilter] = useState<"all" | "open" | "in-progress" | "resolved">("all");
 
-  const myComplaints = useMemo(
-    () => complaints.filter((item) => item.createdBy === CURRENT_STUDENT_ID),
-    [complaints]
-  );
-
   const filtered = useMemo(() => {
-    if (filter === "all") return myComplaints;
-    return myComplaints.filter((item) => item.status === filter);
-  }, [filter, myComplaints]);
+    if (filter === "all") return complaints;
+    return complaints.filter((item) => item.status === filter);
+  }, [filter, complaints]);
 
   return (
     <StudentShell title="Complaint System" subtitle="Raise and track complaint progress">

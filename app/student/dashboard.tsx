@@ -12,9 +12,9 @@ import { useNotices } from "@/hooks/useNotices";
 import { useRooms } from "@/hooks/useRooms";
 import { useStudents } from "@/hooks/useStudents";
 import { useHostelLeaves } from "@/hooks/useHostelLeaves";
+import { useAuth } from "@/hooks/useAuth";
 
 const { width } = Dimensions.get('window');
-const CURRENT_STUDENT_ID = "stu-1";
 
 const authorities = [
   {
@@ -53,20 +53,27 @@ const authorities = [
 ];
 
 export default function StudentDashboardScreen() {
+  const { user } = useAuth();
   const { students } = useStudents();
   const { rooms } = useRooms();
   const { fees } = useFees();
-  const { complaints } = useComplaints();
+  const { complaints } = useComplaints(user?.id);
   const { notices } = useNotices();
   const { menu } = useMess();
   const { leaves } = useHostelLeaves();
 
-  const student = students.find((item) => item.id === CURRENT_STUDENT_ID) ?? students[0];
-  const room = useMemo(() => rooms.find((item) => item.roomNumber === student?.roomNumber), [rooms, student?.roomNumber]);
-  const studentFees = fees.filter((item) => item.studentId === CURRENT_STUDENT_ID);
+  const student = user ?? students[0];
+
+  const room = useMemo(
+    () => rooms.find((item) => item.roomNumber === student?.roomNumber),
+    [rooms, student?.roomNumber]
+  );
+
+  const studentFees = fees.filter((item) => item.studentId === user?.id);
   const paidFees = studentFees.filter((item) => item.status === "paid").length;
-  const activeComplaints = complaints.filter((item) => item.createdBy === CURRENT_STUDENT_ID && item.status !== "resolved");
-  const latestPendingLeave = leaves.find(l => l.studentId === CURRENT_STUDENT_ID && l.status === "pending");
+  const studentComplaints = complaints;
+  const activeComplaints = studentComplaints.filter((item) => item.status !== "resolved");
+  const latestPendingLeave = leaves.find(l => l.studentId === user?.id && l.status === "pending");
   const latestNotices = [...notices].sort((a, b) => (a.postedAt > b.postedAt ? -1 : 1)).slice(0, 3);
 
   const feeCompletion = studentFees.length > 0 ? Math.round((paidFees / studentFees.length) * 100) : 0;

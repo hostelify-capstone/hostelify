@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the requesting user is an admin
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper: check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // A user can read their own profile; admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // A user can create their own profile on registration
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Only admins can update other users; users can update their own
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // Complaints collection
+    match /complaints/{complaintId} {
+      // Any authenticated user can read complaints
+      allow read: if isAuthenticated();
+      // Students can create their own complaints
+      allow create: if isAuthenticated();
+      // Only admins can update status/priority; students can update their own
+      allow update: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // Notices collection
+    match /notices/{noticeId} {
+      // All authenticated users can read notices
+      allow read: if isAuthenticated();
+      // Only admins can create, update, delete
+      allow write: if isAdmin();
+    }
+
+    // Rooms collection
+    match /rooms/{roomId} {
+      // All authenticated users can read rooms
+      allow read: if isAuthenticated();
+      // Only admins can modify rooms
+      allow write: if isAdmin();
+    }
+
+    // Fees collection
+    match /fees/{feeId} {
+      // Students can only read their own fee; admins can read all
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.studentId == request.auth.uid);
+      // Only admins can create/update/delete fees
+      allow write: if isAdmin();
+    }
+
+    // Mess Menu collection
+    match /messMenu/{menuId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Mess Feedback collection
+    match /messFeedback/{feedbackId} {
+      allow read: if isAuthenticated();
+      // Any student can submit feedback
+      allow create: if isAuthenticated();
+      // Only admins can update/delete
+      allow update, delete: if isAdmin();
+    }
+  }
+}

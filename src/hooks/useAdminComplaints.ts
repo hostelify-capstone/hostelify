@@ -1,26 +1,38 @@
-import { useCallback, useMemo, useState } from "react";
-import { seedComplaints } from "@/data/adminSeedData";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { collections } from "@/services/firebase/firestore";
 import { ComplaintPriorities } from "@/constants/complaintPriorities";
 import type { Complaint, ComplaintPriority } from "@/types";
-import type {} from "@/constants/complaintPriorities";
+import { onSnapshot, updateDoc, doc, query, orderBy } from "firebase/firestore";
 
 export const useAdminComplaints = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>(seedComplaints);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+
+  useEffect(() => {
+    const q = query(collections.complaints);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: Complaint[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as Complaint);
+      });
+      data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setComplaints(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const updateStatus = useCallback(
-    (id: string, status: Complaint["status"]) => {
-      setComplaints((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status } : c))
-      );
+    async (id: string, status: Complaint["status"]) => {
+      const docRef = doc(collections.complaints, id);
+      await updateDoc(docRef, { status });
     },
     []
   );
 
   const updatePriority = useCallback(
-    (id: string, priority: ComplaintPriority) => {
-      setComplaints((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, priority } : c))
-      );
+    async (id: string, priority: ComplaintPriority) => {
+      const docRef = doc(collections.complaints, id);
+      await updateDoc(docRef, { priority });
     },
     []
   );

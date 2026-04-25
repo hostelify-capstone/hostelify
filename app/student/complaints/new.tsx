@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Colors } from "@/constants/colors";
 import { useComplaints } from "@/hooks/useComplaints";
+import { useAuth } from "@/hooks/useAuth";
 
-const CURRENT_STUDENT_ID = "stu-1";
 const CATEGORIES = ["Water", "Electricity", "WiFi", "Maintenance", "Mess", "General"];
 
 export default function NewComplaintScreen() {
-  const { addComplaint } = useComplaints();
+  const { user } = useAuth();
+  const { addComplaint } = useComplaints(user?.id);
   const [category, setCategory] = useState("Maintenance");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -76,7 +77,9 @@ export default function NewComplaintScreen() {
                 title: title.trim(),
                 description: description.trim(),
                 category,
-                createdBy: CURRENT_STUDENT_ID,
+                createdBy: user?.id ?? "unknown",
+                studentName: user?.name,
+                roomNumber: user?.roomNumber,
               });
 
               Alert.alert("Complaint submitted", "Your complaint has been raised successfully.", [

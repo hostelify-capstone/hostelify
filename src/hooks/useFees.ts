@@ -1,26 +1,44 @@
-import { useCallback, useMemo, useState } from "react";
-import { seedFees } from "@/data/adminSeedData";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { collections } from "@/services/firebase/firestore";
 import type { Fee } from "@/types";
+import { onSnapshot, query, updateDoc, addDoc, deleteDoc, doc } from "firebase/firestore";
 
 export const useFees = () => {
-  const [fees, setFees] = useState<Fee[]>(seedFees);
+  const [fees, setFees] = useState<Fee[]>([]);
+
+  useEffect(() => {
+    const q = query(collections.fees);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: Fee[] = [];
+      snapshot.forEach((d) => {
+        data.push({ id: d.id, ...d.data() } as Fee);
+      });
+      data.sort((a, b) => a.studentName.localeCompare(b.studentName));
+      setFees(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const addFee = useCallback(async (fee: Omit<Fee, "id">) => {
+    await addDoc(collections.fees, fee);
+  }, []);
 
   const updateFeeStatus = useCallback(
-    (id: string, status: Fee["status"], paidDate?: string) => {
-      setFees((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? {
-                ...f,
-                status,
-                paidDate: status === "paid" ? paidDate ?? new Date().toISOString().split("T")[0] : f.paidDate,
-              }
-            : f
-        )
-      );
+    async (id: string, status: Fee["status"], paidDate?: string) => {
+      const docRef = doc(collections.fees, id);
+      const updateData: Partial<Fee> = { status };
+      if (status === "paid") {
+        updateData.paidDate = paidDate ?? new Date().toISOString().split("T")[0];
+      }
+      await updateDoc(docRef, updateData);
     },
     []
   );
+
+  const deleteFee = useCallback(async (id: string) => {
+    await deleteDoc(doc(collections.fees, id));
+  }, []);
 
   const stats = useMemo(() => {
     const total = fees.length;
@@ -36,5 +54,5 @@ export const useFees = () => {
     return { total, paid, pending, overdue, totalCollected, totalPending };
   }, [fees]);
 
-  return { fees, updateFeeStatus, stats };
+  return { fees, addFee, updateFeeStatus, deleteFee, stats };
 };

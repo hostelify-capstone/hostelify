@@ -24,6 +24,12 @@ export const AdminSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
+  const handleLogout = async () => {
+    const { signOutUser } = await import("@/services/firebase/auth");
+    await signOutUser();
+    router.replace("/auth/login");
+  };
+
   return (
     <View style={styles.sidebar}>
       {/* Logo */}
@@ -62,7 +68,7 @@ export const AdminSidebar = () => {
 
       {/* Footer */}
       <View style={styles.divider} />
-      <Pressable style={styles.logoutBtn} onPress={() => router.replace("/auth/login")}>
+      <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.navIcon}>🚪</Text>
         <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
